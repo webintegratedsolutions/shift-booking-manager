@@ -1,6 +1,15 @@
 <?php
+// Template Name: Client Dashboard
+// Description: A template for the client dashboard to view booked shifts and cancel them.
+// This template is used to display the client dashboard for viewing and managing booked shifts.
+// It includes functionality to cancel booked shifts and view upcoming and past shifts.
+// It is designed to be used within a WordPress theme and requires the WordPress environment to function properly.
+// It is important to ensure that this template is only accessible to logged-in users with the appropriate permissions.
+
+// Prevent direct access to the file
 defined('ABSPATH') || exit;
 
+// Check if the user is logged in and has the 'contributor' role
 if (!is_user_logged_in() || !current_user_can('contributor')) {
     echo '<p>You must be logged in as a client to view this page.</p>';
     return;
@@ -25,6 +34,7 @@ $args = [
     'order' => 'ASC'
 ];
 
+// Check if a shift cancellation is requested
 $shifts = get_posts($args);
 
 if (empty($shifts)) {
@@ -32,10 +42,12 @@ if (empty($shifts)) {
     return;
 }
 
+// Handle cancellation of booked shifts
 echo '<h2>Your Booked Shifts</h2>';
 echo '<table class="sbm-client-booking-table">';
 echo '<thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Status</th><th>Action</th></tr></thead><tbody>';
 
+// Loop through booked shifts and display them
 foreach ($shifts as $shift) {
     $date = get_post_meta($shift->ID, 'shift_date', true);
     $start = get_post_meta($shift->ID, 'start_time', true);
