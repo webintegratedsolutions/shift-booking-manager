@@ -21,6 +21,7 @@ define('SBM_PLUGIN_FILE', __FILE__);
 require_once SBM_PLUGIN_DIR . 'includes/post-types.php';
 require_once SBM_PLUGIN_DIR . 'includes/user-roles.php';
 require_once SBM_PLUGIN_DIR . 'includes/booking-functions.php';
+require_once SBM_PLUGIN_DIR . 'includes/user-account-functions.php';
 require_once SBM_PLUGIN_DIR . 'includes/email-functions.php';
 require_once SBM_PLUGIN_DIR . 'includes/utilities.php';
 
@@ -34,7 +35,7 @@ if (is_admin()) {
 // Require_once SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
 // Require_once SBM_PLUGIN_DIR . 'frontend/booking-form.php';
 require_once SBM_PLUGIN_DIR . 'frontend/client-dashboard.php';
-require_once SBM_PLUGIN_DIR . 'frontend/registration-form.php';
+//require_once SBM_PLUGIN_DIR . 'frontend/registration-form.php';
 
 // Plugin Activation
 function sbm_activate_plugin() {
@@ -62,6 +63,16 @@ function sbm_calendar_shortcode($atts) {
     return ob_get_clean();
 }
 add_shortcode('sbm_calendar', 'sbm_calendar_shortcode');
+
+/**
+ * Client Registration Form Shortcode
+ */
+function sbm_client_registration_shortcode($atts) {
+    ob_start();
+    include SBM_PLUGIN_DIR . 'frontend/registration-form.php';
+    return ob_get_clean();
+}
+add_shortcode('sbm_client_register', 'sbm_client_registration_shortcode');
 
 // Plugin Deactivation
 function sbm_deactivate_plugin() {
