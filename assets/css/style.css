@@ -25,7 +25,7 @@
     box-shadow: 0 1px 5px rgba(0,0,0,0.1);
   }
 
-  //* Calendar Header Styles */
+  /* Calendar Header Styles */
   .sbm-header {
     display: flex;
     justify-content: space-between;
@@ -39,18 +39,21 @@
     align-items: center;
   }
 
-  /* Navigation Buttons */
-  .sbm-nav button {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-right: 10px;
-    transition: background 0.3s ease;
+  /* Navigation Button Styles */
+  .sbm-calendar-nav {
+    overflow: hidden;
   }
+  
+  .sbm-nav-button {
+    background: #f1f1f1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    color: #333;
+    transition: background 0.2s ease;
+  }
+  
 
   /* Navigation Button Hover Effect */
   .sbm-nav button:hover {
