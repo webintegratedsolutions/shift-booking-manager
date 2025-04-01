@@ -31,9 +31,46 @@ wp-config.php
 
 # Log files
 *.log
+*.sql
+*.sqlite
 
 # htaccess
 /.htaccess
+
+# OS / System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Composer / Node (if used)
+vendor/
+node_modules/
+npm-debug.log
+package-lock.json
+yarn.lock
+
+# PHPStorm or other IDEs
+*.iml
+*.ipr
+*.iws
+*.swp
+
+# Backup files
+*.bak
+*.tmp
+*.old
+*~
+
+# Build artifacts (optional)
+build/
+dist/
+*.zip
 
 # All plugins
 #
