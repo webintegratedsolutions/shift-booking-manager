@@ -29,6 +29,7 @@ require_once SBM_PLUGIN_DIR . 'includes/utilities.php';
 if (is_admin()) {
     require_once SBM_PLUGIN_DIR . 'admin/settings-page.php';
     require_once SBM_PLUGIN_DIR . 'admin/provider-dashboard.php';
+    require_once SBM_PLUGIN_DIR . 'admin/shift-editor.php';
 }
 
 // Frontend Interfaces
