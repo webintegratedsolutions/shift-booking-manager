@@ -37,6 +37,13 @@ $calendar_data = sbm_get_shifts_for_month($year, sprintf('%02d', $month));
 $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 $first_day = date('w', strtotime("$year-$month-01")); // 0=Sunday
 
+//Add Success Message on Registration Redirect
+if (isset($_GET['registered']) && $_GET['registered'] == 1) {
+    echo '<div class="sbm-success-message" style="padding:10px;background:#e6f7ff;border:1px solid #91d5ff;border-radius:5px;margin-bottom:15px;">
+        ✅ Thank you! Your account has been created and you are now logged in.
+    </div>';
+}
+
 // Create calendar grid
 echo '<div class="sbm-calendar-nav" style="margin-bottom: 1em;">';
 echo '<a href="' . esc_url(add_query_arg(['month' => $prev_month, 'year' => $prev_year], $calendar_url)) . '" class="sbm-nav-button">&laquo; Previous</a>';
