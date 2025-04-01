@@ -1,0 +1,53 @@
+<?php
+/**
+ * Plugin Name: Shift Booking Manager
+ * Description: A shift scheduling and booking system for service providers and their clients.
+ * Version: 1.0.0
+ * Author: Your Name or Company
+ * License: GPL2+
+ * Text Domain: shift-booking-manager
+ */
+
+defined('ABSPATH') || exit; // Exit if accessed directly
+
+// Plugin Constants
+define('SBM_VERSION', '1.0.0');
+define('SBM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('SBM_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('SBM_PLUGIN_FILE', __FILE__);
+
+// Load Core Includes
+require_once SBM_PLUGIN_DIR . 'includes/post-types.php';
+require_once SBM_PLUGIN_DIR . 'includes/user-roles.php';
+require_once SBM_PLUGIN_DIR . 'includes/booking-functions.php';
+require_once SBM_PLUGIN_DIR . 'includes/email-functions.php';
+require_once SBM_PLUGIN_DIR . 'includes/utilities.php';
+
+// Admin Interfaces
+if (is_admin()) {
+    require_once SBM_PLUGIN_DIR . 'admin/settings-page.php';
+    require_once SBM_PLUGIN_DIR . 'admin/provider-dashboard.php';
+}
+
+// Frontend Interfaces
+require_once SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
+require_once SBM_PLUGIN_DIR . 'frontend/booking-form.php';
+require_once SBM_PLUGIN_DIR . 'frontend/client-dashboard.php';
+require_once SBM_PLUGIN_DIR . 'frontend/registration-form.php';
+
+// Plugin Activation
+function sbm_activate_plugin() {
+    // Register custom post types, flush rewrite rules, add roles
+    sbm_register_post_types();
+    sbm_add_custom_roles();
+    flush_rewrite_rules();
+}
+register_activation_hook(__FILE__, 'sbm_activate_plugin');
+
+// Plugin Deactivation
+function sbm_deactivate_plugin() {
+    flush_rewrite_rules();
+}
+register_deactivation_hook(__FILE__, 'sbm_deactivate_plugin');
+
+// Plugin Uninstall - defined in uninstall.php if needed
