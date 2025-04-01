@@ -94,6 +94,29 @@ add_action('wp_enqueue_scripts', 'sbm_enqueue_assets');
 
 // Plugin Uninstall - defined in uninstall.php if needed
 
+function sbm_cleanup_empty_shift_drafts() {
+    $shifts = get_posts([
+        'post_type' => 'shift',
+        'post_status' => 'draft',
+        'posts_per_page' => -1,
+        'meta_query' => [
+            'relation' => 'AND',
+            [
+                'key' => 'shift_date',
+                'compare' => 'NOT EXISTS',
+            ],
+            [
+                'key' => 'start_time',
+                'compare' => 'NOT EXISTS',
+            ],
+        ]
+    ]);
+
+    foreach ($shifts as $shift) {
+        wp_delete_post($shift->ID, true);
+    }
+}
+add_action('wp_loaded', 'sbm_cleanup_empty_shift_drafts');
 
 /**
  * TEMP: Add a test shift for development purposes
