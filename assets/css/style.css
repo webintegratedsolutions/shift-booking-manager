@@ -1,0 +1,133 @@
+/* Shift Booking Calendar Styles */
+/* This CSS file is used to style the Shift Booking Calendar component. */
+/* The calendar is designed to be responsive and user-friendly, with a clean layout and clear visual hierarchy. */
+
+  /* General Styles */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .sbm-container {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  }
+
+  //* Calendar Header Styles */
+  .sbm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  /* Calendar Navigation Styles */
+  .sbm-nav {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Navigation Buttons */
+  .sbm-nav button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    transition: background 0.3s ease;
+  }
+
+  /* Navigation Button Hover Effect */
+  .sbm-nav button:hover {
+    background: #0056b3;
+  }
+
+/* Navigation Button Disabled State */
+    .sbm-nav button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Calendar Title */
+    .sbm-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        }
+
+/* General calendar styles */
+.sbm-calendar {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+  }
+  
+  .sbm-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  
+  .sbm-calendar-cell {
+    border: 1px solid #eee;
+    background: #f9f9f9;
+    padding: 8px;
+    min-height: 80px;
+    font-size: 14px;
+    border-radius: 6px;
+    position: relative;
+  }
+  
+  .sbm-calendar-header {
+    background: #f1f1f1;
+    font-weight: bold;
+    text-align: center;
+    padding: 6px 0;
+  }
+  
+  .sbm-calendar-cell strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  
+  .sbm-shift {
+    margin-top: 5px;
+    font-size: 13px;
+  }
+  
+  .sbm-shift.open a {
+    color: #2e7d32;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .sbm-shift.booked {
+    color: #888;
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+  
+  .sbm-shift.booked a {
+    pointer-events: none;
+    color: #aaa;
+  }
+  

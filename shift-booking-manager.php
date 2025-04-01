@@ -52,10 +52,31 @@ function sbm_booking_form_shortcode($atts) {
 }
 add_shortcode('sbm_booking_form', 'sbm_booking_form_shortcode');
 
+/**
+ * Calendar Display Shortcode
+ */
+function sbm_calendar_shortcode($atts) {
+    ob_start();
+    include SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
+    return ob_get_clean();
+}
+add_shortcode('sbm_calendar', 'sbm_calendar_shortcode');
+
 // Plugin Deactivation
 function sbm_deactivate_plugin() {
     flush_rewrite_rules();
 }
 register_deactivation_hook(__FILE__, 'sbm_deactivate_plugin');
+
+// Enqueue Scripts and Styles
+function sbm_enqueue_assets() {
+    wp_enqueue_style(
+        'sbm-styles',
+        SBM_PLUGIN_URL . 'assets/css/style.css',
+        [],
+        SBM_VERSION
+    );
+}
+add_action('wp_enqueue_scripts', 'sbm_enqueue_assets');
 
 // Plugin Uninstall - defined in uninstall.php if needed
