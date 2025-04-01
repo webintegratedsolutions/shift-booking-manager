@@ -44,6 +44,14 @@ function sbm_activate_plugin() {
 }
 register_activation_hook(__FILE__, 'sbm_activate_plugin');
 
+//Add Shortcode Wrapper for Booking Form
+function sbm_booking_form_shortcode($atts) {
+    ob_start();
+    include SBM_PLUGIN_DIR . 'frontend/booking-form.php';
+    return ob_get_clean();
+}
+add_shortcode('sbm_booking_form', 'sbm_booking_form_shortcode');
+
 // Plugin Deactivation
 function sbm_deactivate_plugin() {
     flush_rewrite_rules();
