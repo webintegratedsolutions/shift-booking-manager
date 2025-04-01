@@ -64,3 +64,15 @@ function sbm_handle_client_registration() {
     exit;
 }
 add_action('admin_post_nopriv_sbm_register_client', 'sbm_handle_client_registration');
+
+
+/**
+ * Hide admin bar for clients (contributors)
+ */
+function sbm_hide_admin_bar_for_clients() {
+    if (current_user_can('contributor') && !current_user_can('edit_posts')) {
+        show_admin_bar(false);
+    }
+}
+add_action('after_setup_theme', 'sbm_hide_admin_bar_for_clients');
+
