@@ -65,14 +65,41 @@ function sbm_handle_client_registration() {
 }
 add_action('admin_post_nopriv_sbm_register_client', 'sbm_handle_client_registration');
 
-
 /**
- * Hide admin bar for clients (contributors)
+ * Hide admin bar and disable admin access for clients
  */
-function sbm_hide_admin_bar_for_clients() {
-    if (current_user_can('contributor') && !current_user_can('edit_posts')) {
+function sbm_restrict_admin_bar_and_dashboard() {
+    if (!is_user_logged_in()) return;
+
+    $user = wp_get_current_user();
+
+    // Hide admin bar
+    if (in_array('contributor', (array) $user->roles)) {
         show_admin_bar(false);
     }
+
+    // Redirect away from wp-admin
+    if (
+        is_admin() &&
+        !defined('DOING_AJAX') &&
+        in_array('contributor', (array) $user->roles)
+    ) {
+        wp_redirect(home_url('/client-dashboard/')); // 👈 change to your dashboard page
+        exit;
+    }
 }
-add_action('after_setup_theme', 'sbm_hide_admin_bar_for_clients');
+add_action('init', 'sbm_restrict_admin_bar_and_dashboard');
+
+/**
+ * Redirect contributor role users after login
+ */
+function sbm_redirect_after_login($redirect_to, $request, $user) {
+    if (isset($user->roles) && in_array('contributor', $user->roles)) {
+        return home_url('/client-dashboard/'); // 👈 customize URL here
+    }
+
+    return $redirect_to; // default for other roles
+}
+add_filter('login_redirect', 'sbm_redirect_after_login', 10, 3);
+
 
