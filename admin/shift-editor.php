@@ -209,6 +209,22 @@ function sbm_save_shift_meta_box($post_id) {
         }
     }
 
+    // Enqueue admin script for validation
+    // Only enqueue if the user is on the edit screen for the shift post type
+    function sbm_enqueue_admin_shift_script($hook) {
+        $screen = get_current_screen();
+        if ($screen->post_type === 'shift') {
+            wp_enqueue_script(
+                'sbm-shift-validation',
+                SBM_PLUGIN_URL . 'assets/js/admin-shift-validation.js',
+                [],
+                SBM_VERSION,
+                true
+            );
+        }
+    }
+    add_action('admin_enqueue_scripts', 'sbm_enqueue_admin_shift_script');
+
     // === SAVE FIELDS ===
     $fields = [
         'shift_date' => $shift_date,
