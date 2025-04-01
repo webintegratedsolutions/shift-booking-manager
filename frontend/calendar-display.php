@@ -62,7 +62,10 @@ for ($i = 0; $i < $first_day; $i++) {
 // Calendar day cells
 for ($day = 1; $day <= $days_in_month; $day++) {
     $date = "$year-" . sprintf('%02d', $month) . "-" . sprintf('%02d', $day);
-    echo "<div class='sbm-calendar-cell'><strong>{$day}</strong>";
+    // Check if the date is today
+    $is_today = ($date === date('Y-m-d'));
+    $today_class = $is_today ? ' today' : '';
+    echo "<div class='sbm-calendar-cell{$today_class}'><strong>{$day}</strong>";
 
     if (!empty($calendar_data[$date])) {
         foreach ($calendar_data[$date] as $shift) {

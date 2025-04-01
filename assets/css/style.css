@@ -54,7 +54,6 @@
     transition: background 0.2s ease;
   }
   
-
   /* Navigation Button Hover Effect */
   .sbm-nav button:hover {
     background: #0056b3;
@@ -73,6 +72,12 @@
         color: #333;
         }
 
+        /* Calendar Cell Style for current day */
+        .sbm-calendar-cell.today {
+          border: 2px solid #0073aa; /* WordPress blue */
+          background-color: #eaf4fb;
+        }
+        
 /* General calendar styles */
 .sbm-calendar {
     margin-top: 20px;
