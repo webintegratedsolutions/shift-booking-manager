@@ -105,6 +105,18 @@ function sbm_render_shift_meta_box($post) {
 }
 
 /**
+ * Remove title input field for shift post type
+ */
+function sbm_hide_shift_title_field() {
+    $screen = get_current_screen();
+    if ($screen->post_type === 'shift') {
+        echo '<style>#titlediv { display: none; }</style>';
+    }
+}
+add_action('admin_head', 'sbm_hide_shift_title_field');
+
+
+/**
  * Save shift meta when the post is saved
  */
 function sbm_save_shift_meta_box($post_id) {
@@ -113,47 +125,119 @@ function sbm_save_shift_meta_box($post_id) {
         return;
     }
 
-    // Prevent autosave from overwriting
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
-
-    // Check user permission
     if (!current_user_can('edit_post', $post_id)) return;
 
-    // Validation: if status is booked, both client and provider must be selected
-    if (
-        isset($_POST['status']) &&
-        $_POST['status'] === 'booked' &&
-        (empty($_POST['client_id']) || empty($_POST['provider_id']))
-    ) {
-        // If the status is booked but either client or provider is not selected, show an error message
-        // and prevent the post from being saved.
-        $edit_link = get_edit_post_link($post_id, ''); // Get link to return to the edit screen
-        $message = __('You must select both a client and provider to mark this shift as booked.', 'shift-booking-manager');
-        $message .= '<br><br><a href="' . esc_url($edit_link) . '" style="font-weight:bold;">&laquo; Go back to edit shift</a>';
+    $edit_link = get_edit_post_link($post_id, '');
 
-        wp_die($message, __('Shift Booking Error', 'shift-booking-manager'), ['back_link' => false]);
+    // Gather submitted values
+    $shift_date = sanitize_text_field($_POST['shift_date'] ?? '');
+    $start_time = sanitize_text_field($_POST['start_time'] ?? '');
+    $end_time = sanitize_text_field($_POST['end_time'] ?? '');
+    $service = sanitize_text_field($_POST['service'] ?? '');
+    $rate = floatval($_POST['hourly_rate'] ?? 0);
+    $status = sanitize_text_field($_POST['status'] ?? 'open');
+    $provider_id = intval($_POST['provider_id'] ?? 0);
+    $client_id = intval($_POST['client_id'] ?? 0);
 
+    // Get existing shift data (before update)
+    $is_existing_shift = get_post_status($post_id) !== false;
+    $original_status = get_post_meta($post_id, 'status', true);
+
+    // === VALIDATION RULES ===
+
+    // Mandatory fields when adding or updating shift
+    if (empty($shift_date) || empty($start_time) || empty($end_time) || empty($service) || $rate <= 0) {
+        $message = __('Date, Start Time, End Time, Service, and Hourly Rate are required fields.', 'shift-booking-manager');
+        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+        wp_die($message, __('Missing Required Fields', 'shift-booking-manager'), ['back_link' => false]);
     }
 
-    // Define meta fields to update
+    // Validate time: Start must be at least 1 hour in the future
+    $now = current_time('timestamp'); // current WP time
+    $start_timestamp = strtotime("$shift_date $start_time");
+
+    if ($start_timestamp < $now + HOUR_IN_SECONDS) {
+        $message = __('Start time must be at least 1 hour in the future.', 'shift-booking-manager');
+        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+        wp_die($message, __('Invalid Shift Time', 'shift-booking-manager'), ['back_link' => false]);
+    }
+
+    // Can't mark as "booked" without client and provider
+    if (
+        $status === 'booked' &&
+        (empty($client_id) || empty($provider_id))
+    ) {
+        $message = __('You must select both a client and provider to mark this shift as booked.', 'shift-booking-manager');
+        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+        wp_die($message, __('Shift Booking Error', 'shift-booking-manager'), ['back_link' => false]);
+    }
+
+    // Can't set status back to open if client & provider are selected
+    if (
+        $status === 'open' &&
+        !empty($client_id) &&
+        !empty($provider_id)
+    ) {
+        $message = __('A shift cannot remain open if both a client and provider are already selected.', 'shift-booking-manager');
+        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+        wp_die($message, __('Shift Status Conflict', 'shift-booking-manager'), ['back_link' => false]);
+    }
+
+    // If the shift is already booked/completed and not being cancelled, lock it
+    $locked_statuses = ['booked', 'completed'];
+    if (
+        $is_existing_shift &&
+        in_array($original_status, $locked_statuses) &&
+        $status !== 'cancelled'
+    ) {
+        // Prevent editing once booked or completed, unless cancelling
+        $locked_fields = [
+            'shift_date', 'start_time', 'end_time', 'service', 'hourly_rate', 'provider_id', 'client_id'
+        ];
+
+        foreach ($locked_fields as $field) {
+            if (!empty($_POST[$field])) {
+                $submitted = sanitize_text_field($_POST[$field]);
+                $existing = get_post_meta($post_id, $field, true);
+                if ((string)$submitted !== (string)$existing) {
+                    $message = __('You cannot modify a booked or completed shift. It can only be cancelled.', 'shift-booking-manager');
+                    $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+                    wp_die($message, __('Shift Locked', 'shift-booking-manager'), ['back_link' => false]);
+                }
+            }
+        }
+    }
+
+    // === SAVE FIELDS ===
     $fields = [
-        'shift_date' => 'sanitize_text_field',
-        'start_time' => 'sanitize_text_field',
-        'end_time' => 'sanitize_text_field',
-        'service' => 'sanitize_text_field',
-        'hourly_rate' => 'floatval',
-        'status' => 'sanitize_text_field',
-        'provider_id' => 'intval',
-        'client_id' => 'intval',
+        'shift_date' => $shift_date,
+        'start_time' => $start_time,
+        'end_time' => $end_time,
+        'service' => $service,
+        'hourly_rate' => $rate,
+        'status' => $status,
+        'provider_id' => $provider_id,
+        'client_id' => $client_id,
     ];
 
-    foreach ($fields as $key => $sanitize_function) {
-        if (isset($_POST[$key])) {
-            $value = call_user_func($sanitize_function, $_POST[$key]);
-            update_post_meta($post_id, $key, $value);
-        }
+    foreach ($fields as $key => $value) {
+        update_post_meta($post_id, $key, $value);
+    }
+
+    // Auto-generate post title from date and time
+    if (!empty($shift_date) && !empty($start_time) && !empty($end_time)) {
+        $formatted_date = date('F jS', strtotime($shift_date));
+        $formatted_start = date('g:i A', strtotime($start_time));
+        $formatted_end = date('g:i A', strtotime($end_time));
+        $auto_title = "{$formatted_date} @ {$formatted_start} to {$formatted_end}";
+
+        wp_update_post([
+            'ID' => $post_id,
+            'post_title' => $auto_title,
+        ]);
+
     }
 }
 add_action('save_post_shift', 'sbm_save_shift_meta_box');
-
 
