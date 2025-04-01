@@ -4,6 +4,9 @@
  * Calendar Display
  * Displays a calendar grid for booking shifts
  * Handles month/year navigation and shift status display
+ * Detect the current year and month from the query string
+ * Add "Prev" and "Next" buttons that adjust the month
+ * Wrap it in a simple UI block above the calendar
  * 
  * @package Shift Booking Manager
  */
