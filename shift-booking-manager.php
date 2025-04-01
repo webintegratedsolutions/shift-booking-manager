@@ -3,7 +3,8 @@
  * Plugin Name: Shift Booking Manager
  * Description: A shift scheduling and booking system for service providers and their clients.
  * Version: 1.0.0
- * Author: Your Name or Company
+ * Author: Web Integrated Solutions
+ * Author URI: https://webintegratedsolutions.com
  * License: GPL2+
  * Text Domain: shift-booking-manager
  */
@@ -30,8 +31,8 @@ if (is_admin()) {
 }
 
 // Frontend Interfaces
-require_once SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
-require_once SBM_PLUGIN_DIR . 'frontend/booking-form.php';
+// Require_once SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
+// Require_once SBM_PLUGIN_DIR . 'frontend/booking-form.php';
 require_once SBM_PLUGIN_DIR . 'frontend/client-dashboard.php';
 require_once SBM_PLUGIN_DIR . 'frontend/registration-form.php';
 
