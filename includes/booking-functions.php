@@ -6,7 +6,10 @@
  * Saving client data to the shift post
  * Updating the shift status to booked
  * Preventing double bookings
- * Triggering email notifications
+ * Triggering email notifications via do_action()
+ * Role check and nonce verification
+ * Saves all client info securely
+ * Redirects on success
  */
 
 defined('ABSPATH') || exit;
