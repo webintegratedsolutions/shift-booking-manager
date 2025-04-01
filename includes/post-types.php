@@ -35,7 +35,8 @@ function sbm_register_post_types() {
         'hierarchical'          => false,
         'public'                => false,
         'show_ui'               => true, // Admin only, hidden if using front-end only
-        'show_in_menu'          => false, // Can be exposed optionally
+        'show_in_menu'          => true, // Can be exposed optionally
+        'menu_icon'             => 'dashicons-calendar-alt',
         'menu_position'         => 20,
         'show_in_admin_bar'     => false,
         'show_in_nav_menus'     => false,
