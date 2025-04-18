@@ -35,7 +35,7 @@ if (is_admin()) {
 // Frontend Interfaces
 // Require_once SBM_PLUGIN_DIR . 'frontend/calendar-display.php';
 // Require_once SBM_PLUGIN_DIR . 'frontend/booking-form.php';
-require_once SBM_PLUGIN_DIR . 'frontend/client-dashboard.php';
+//require_once SBM_PLUGIN_DIR . 'frontend/client-dashboard.php';
 //require_once SBM_PLUGIN_DIR . 'frontend/registration-form.php';
 
 // Plugin Activation
@@ -97,7 +97,7 @@ add_action('wp_enqueue_scripts', 'sbm_enqueue_assets');
 function sbm_cleanup_empty_shift_drafts() {
     $shifts = get_posts([
         'post_type' => 'shift',
-        'post_status' => array('publish', 'draft', 'pending', 'future'),
+        'post_status' => 'draft',
         'posts_per_page' => -1,
         'meta_query' => [
             'relation' => 'AND',
