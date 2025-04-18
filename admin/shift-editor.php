@@ -65,7 +65,7 @@ function sbm_render_shift_meta_box($post) {
 </p>
 
 <p><label>Start Time:</label><br>
-    <select name="start_time" id="start_time">
+    <select name="start_time">
         <option value="">-- Select Start Time --</option>
         <?php echo sbm_render_time_options($start); ?>
     </select>
