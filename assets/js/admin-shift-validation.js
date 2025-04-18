@@ -38,52 +38,48 @@ document.addEventListener('DOMContentLoaded', function () {
   function filterStartTimes(selectedDate) {
     const now = new Date();
     const currentHour = now.getHours();
-  
+
     const parts = selectedDate.split('-');
     const selected = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-  
-    console.log('🕒 Now (local):', now.toString());
-    console.log('📅 Selected Date (parsed):', selected.toString());
-  
+
     const isSameLocalDate = selected.getFullYear() === now.getFullYear() &&
                             selected.getMonth() === now.getMonth() &&
                             selected.getDate() === now.getDate();
-  
+
+    console.log('🕒 Now (local):', now.toString());
+    console.log('📅 Selected Date (parsed):', selected.toString());
     console.log('🔍 isSameLocalDate:', isSameLocalDate);
     console.log('🕐 Current Hour + 1:', currentHour + 1);
-  
-// 🔄 Clear all options
-startTimeSelect.innerHTML = '';
-console.log('⛔ startTimeSelect.innerHTML cleared');
 
-// ✅ Add a new placeholder once and always only once
-const placeholder = new Option('-- Select Start Time --', '');
-placeholder.disabled = true;
-placeholder.selected = true;
-startTimeSelect.appendChild(placeholder);
-console.log('✅ Added clean placeholder:', placeholder);
-  
-fullTimeOptions.forEach(({ value, label }) => {
-  if (!value) return; // ⛔ skip empty placeholder already added manually
+    // 🔄 Reset and re-add clean placeholder
+    startTimeSelect.innerHTML = '';
+    const placeholder = new Option('-- Select Start Time --', '');
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    startTimeSelect.appendChild(placeholder);
+    console.log('✅ Added clean placeholder:', placeholder);
 
-  const hour = parseInt(value.split(':')[0], 10);
+    fullTimeOptions.forEach(({ value, label }) => {
+      // Skip adding empty options (already handled with the placeholder)
+      if (!value) return;
+    
+      const hour = parseInt(value.split(':')[0], 10);
+    
+      if (isSameLocalDate) {
+        if (hour >= currentHour + 1) {
+          const opt = new Option(label, value);
+          startTimeSelect.appendChild(opt);
+          console.log('✅ Added start option (today):', value);
+        }
+      } else {
+        const opt = new Option(label, value);
+        startTimeSelect.appendChild(opt);
+        console.log('✅ Added start option (future):', value);
+      }
+    });    
 
-  if (isSameLocalDate) {
-    if (hour >= currentHour + 1) {
-      const opt = new Option(label, value);
-      startTimeSelect.appendChild(opt);
-      console.log('✅ Added start option (today):', value);
-    }
-  } else {
-    const opt = new Option(label, value);
-    startTimeSelect.appendChild(opt);
-    console.log('✅ Added start option (future):', value);
-  }
-});
-  
     console.log('🧾 Final options count:', startTimeSelect.options.length);
   }
-  
 
   function filterEndTimes(startVal) {
     endTimeSelect.innerHTML = '';
@@ -121,14 +117,16 @@ fullTimeOptions.forEach(({ value, label }) => {
     const now = new Date();
     const selected = new Date(selectedDate);
 
+    const isSameLocalDate = selected.getFullYear() === now.getFullYear() &&
+                            selected.getMonth() === now.getMonth() &&
+                            selected.getDate() === now.getDate();
+    const currentHour = now.getHours();
+
     // Check if old start time is still valid
     let adjustedStart = oldStart;
     let adjustedEnd = oldEnd;
 
-    const isToday = now.toDateString() === selected.toDateString();
-    const currentHour = now.getHours();
-
-    if (isToday && oldStart) {
+    if (isSameLocalDate && oldStart) {
       const hour = parseInt(oldStart.split(':')[0]);
       if (hour < currentHour + 1) {
         // Bump start time
@@ -137,24 +135,33 @@ fullTimeOptions.forEach(({ value, label }) => {
       }
     }
 
-    // Set start
+    // 🕐 Set start
     startTimeSelect.value = adjustedStart;
-    filterEndTimes(adjustedStart);
 
-    // Adjust end time only if it's now invalid
-    const interval = getTimeDiffMinutes(oldStart, oldEnd);
-    const newEndTime = getTimePlusMinutes(adjustedStart, interval);
-
-    if (interval && !isTimeValid(newEndTime, endTimeSelect)) {
-      adjustedEnd = '';
+    // 🧠 Validate: If today, and adjusted start is not in options, reset
+    if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
+      adjustedStart = '';
+      startTimeSelect.value = '';
+      endTimeSelect.value = '';
+      endTimeSelect.disabled = true;
+      showWarning(`Start and end times have been reset because the selected times are no longer valid for today.`);
     } else {
-      adjustedEnd = newEndTime;
-    }
+      filterEndTimes(adjustedStart);
 
-    endTimeSelect.disabled = !adjustedStart;
-    endTimeSelect.value = adjustedEnd;
-    if (!adjustedEnd && interval) {
-      showWarning(`End time reset. Please select a new one at least 1 hour after the start.`);
+      // 🎯 Adjust end time if no longer valid for updated start
+      const interval = getTimeDiffMinutes(oldStart, oldEnd);
+      const newEndTime = getTimePlusMinutes(adjustedStart, interval);
+
+      if (interval && !isTimeValid(newEndTime, endTimeSelect)) {
+        adjustedEnd = '';
+        endTimeSelect.value = '';
+        showWarning(`End time reset. Please select a new one at least 1 hour after the start.`);
+      } else {
+        adjustedEnd = newEndTime;
+        endTimeSelect.value = adjustedEnd;
+      }
+
+      endTimeSelect.disabled = !adjustedStart;
     }
   });
 
