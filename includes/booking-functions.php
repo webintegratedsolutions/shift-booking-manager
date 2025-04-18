@@ -98,6 +98,7 @@ function sbm_get_shifts_for_month($year, $month, $provider_id = null) {
 
     if ($provider_id) {
         $query_args['meta_query'][] = [
+            'post_status' => array('publish', 'draft', 'pending', 'future'),
             'key' => 'provider_id',
             'value' => $provider_id,
             'compare' => '=',

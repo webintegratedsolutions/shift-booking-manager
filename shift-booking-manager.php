@@ -97,7 +97,7 @@ add_action('wp_enqueue_scripts', 'sbm_enqueue_assets');
 function sbm_cleanup_empty_shift_drafts() {
     $shifts = get_posts([
         'post_type' => 'shift',
-        'post_status' => 'draft',
+        'post_status' => array('publish', 'draft', 'pending', 'future'),
         'posts_per_page' => -1,
         'meta_query' => [
             'relation' => 'AND',

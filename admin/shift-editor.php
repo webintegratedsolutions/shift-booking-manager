@@ -172,21 +172,23 @@ function sbm_save_shift_meta_box($post_id) {
     }
 
     // NEW: Validate End Time > Start Time
-    $end_timestamp = strtotime("$shift_date $end_time");
+    if (!empty($end_time)) {
+        $end_timestamp = strtotime("$shift_date $end_time");
 
-    if ($end_timestamp <= $start_timestamp) {
-        update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
-        $message = __('End time must be after the start time.', 'shift-booking-manager');
-        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
-        wp_die($message, __('Invalid End Time', 'shift-booking-manager'), ['back_link' => false]);
-    }
-
-    // NEW: Minimum 1 hour shift
-    if (($end_timestamp - $start_timestamp) < HOUR_IN_SECONDS) {
-        update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
-        $message = __('The shift must be at least 1 hour long.', 'shift-booking-manager');
-        $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
-        wp_die($message, __('Shift Too Short', 'shift-booking-manager'), ['back_link' => false]);
+        if ($end_timestamp <= $start_timestamp) {
+            update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
+            $message = __('End time must be after the start time.', 'shift-booking-manager');
+            $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+            wp_die($message, __('Invalid End Time', 'shift-booking-manager'), ['back_link' => false]);
+        }
+    
+        // NEW: Minimum 1 hour shift
+        if (($end_timestamp - $start_timestamp) < HOUR_IN_SECONDS) {
+            update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
+            $message = __('The shift must be at least 1 hour long.', 'shift-booking-manager');
+            $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+            wp_die($message, __('Shift Too Short', 'shift-booking-manager'), ['back_link' => false]);
+        }
     }
 
     // Can't be "booked" without both client and provider
@@ -247,10 +249,12 @@ function sbm_save_shift_meta_box($post_id) {
         $auto_title = "{$formatted_date} @ {$formatted_start} to {$formatted_end}";
 
         remove_action('save_post_shift', 'sbm_save_shift_meta_box');
-        wp_update_post([
-            'ID' => $post_id,
-            'post_title' => $auto_title,
-        ]);
+        if (get_post_status($post_id) === 'publish') {
+            wp_update_post([
+                'ID' => $post_id,
+                'post_title' => $auto_title,
+            ]);
+        }
         add_action('save_post_shift', 'sbm_save_shift_meta_box');
     }
 
@@ -258,63 +262,20 @@ function sbm_save_shift_meta_box($post_id) {
 }
 add_action('save_post_shift', 'sbm_save_shift_meta_box');
 
-/**
- * Pre-validate shift before insert (prevents invalid post save)
- */
-function sbm_validate_shift_before_insert($data, $postarr) {
+function sbm_exclude_auto_drafts_from_admin($query) {
+    global $pagenow;
 
     if (
-        $postarr['post_type'] !== 'shift' ||
-        defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ||
-        !isset($_POST['shift_date']) // User didn't click "Publish/Update"
+        is_admin() &&
+        $pagenow === 'edit.php' &&
+        isset($_GET['post_type']) &&
+        $_GET['post_type'] === 'shift' &&
+        $query->is_main_query()
     ) {
-        return $data;
+        $query->set('post_status', array('publish', 'draft', 'pending', 'future', 'private'));
     }
-
-    $errors = [];
-
-    $shift_date = sanitize_text_field($postarr['shift_date'] ?? '');
-    $start_time = sanitize_text_field($postarr['start_time'] ?? '');
-    $end_time = sanitize_text_field($postarr['end_time'] ?? '');
-    $service = sanitize_text_field($postarr['service'] ?? '');
-    $rate = floatval($postarr['hourly_rate'] ?? 0);
-    $status = sanitize_text_field($postarr['status'] ?? 'open');
-    $provider_id = intval($postarr['provider_id'] ?? 0);
-    $client_id = intval($postarr['client_id'] ?? 0);
-
-    if (empty($shift_date)) $errors[] = 'Date is required.';
-    if (empty($start_time)) $errors[] = 'Start Time is required.';
-    if (empty($end_time)) $errors[] = 'End Time is required.';
-    if (empty($service)) $errors[] = 'Service is required.';
-    if ($rate <= 0) $errors[] = 'Hourly rate must be greater than 0.';
-
-    if (!empty($shift_date) && !empty($start_time)) {
-        $now = current_time('timestamp');
-        $start_timestamp = strtotime("$shift_date $start_time");
-        if ($start_timestamp < $now + HOUR_IN_SECONDS) {
-            $errors[] = 'Start time must be at least 1 hour from now.';
-        }
-    }
-
-    if ($status === 'booked' && (empty($provider_id) || empty($client_id))) {
-        $errors[] = 'You must select both a provider and client to mark as booked.';
-    }
-
-    if ($status === 'open' && !empty($provider_id) && !empty($client_id)) {
-        $errors[] = 'A shift cannot remain open with both a client and provider.';
-    }
-
-    if (!empty($errors)) {
-        add_filter('redirect_post_location', function ($location) use ($errors) {
-            return add_query_arg('sbm_shift_errors', urlencode(implode('|', $errors)), $location);
-        });
-        $data['post_status'] = 'draft';
-        $data['post_title'] = '';
-    }
-
-    return $data;
 }
-//add_filter('wp_insert_post_data', 'sbm_validate_shift_before_insert', 10, 2);
+add_action('pre_get_posts', 'sbm_exclude_auto_drafts_from_admin');
 
 /**
  * Show error notices in the admin

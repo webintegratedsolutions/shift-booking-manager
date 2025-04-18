@@ -16,15 +16,15 @@ function sbm_add_custom_roles() {
     $contributor = get_role('contributor');
     if ($contributor) {
         // Add custom capabilities if needed
-        // $contributor->add_cap('read_shift');
+        $contributor->add_cap('read_shift');
     }
 
     // Service providers will use the Editor role
     $editor = get_role('editor');
     if ($editor) {
         // Add custom capabilities if needed
-        // $editor->add_cap('manage_shifts');
-        // $editor->add_cap('view_own_shift_calendar');
+        $editor->add_cap('manage_shifts');
+        $editor->add_cap('view_own_shift_calendar');
     }
 
     // Optional: Add a custom role for future use

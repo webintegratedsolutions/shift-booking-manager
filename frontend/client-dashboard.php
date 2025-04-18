@@ -21,6 +21,7 @@ $current_user_id = get_current_user_id();
 $today = date('Y-m-d');
 $args = [
     'post_type' => 'shift',
+    'post_status' => array('publish', 'draft', 'pending', 'future'),
     'posts_per_page' => -1,
     'meta_query' => [
         [
