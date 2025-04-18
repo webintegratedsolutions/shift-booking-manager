@@ -59,15 +59,17 @@ function sbm_render_shift_meta_box($post) {
 
     wp_nonce_field('sbm_save_shift_meta', 'sbm_shift_nonce');
     ?>
-    <p><label>Date:</label><br>
-        <input type="date" name="shift_date" value="<?php echo esc_attr($date); ?>">
-    </p>
-    <p><label>Start Time:</label><br>
-    <select name="start_time">
+<?php $min_date = date('Y-m-d'); ?>
+<p><label>Date:</label><br>
+    <input type="date" id="shift_date" name="shift_date" min="<?php echo date('Y-m-d'); ?>" value="<?php echo esc_attr($date); ?>">
+</p>
+
+<p><label>Start Time:</label><br>
+    <select name="start_time" id="start_time">
         <option value="">-- Select Start Time --</option>
         <?php echo sbm_render_time_options($start); ?>
     </select>
-    </p>
+</p>
     <p><label>End Time:</label><br>
     <select name="end_time">
         <option value="">-- Select End Time --</option>
@@ -300,13 +302,13 @@ add_action('admin_notices', 'sbm_show_shift_admin_errors');
  * Enqueue JS for admin validation (optional enhancement)
  */
 function sbm_enqueue_admin_shift_scripts($hook) {
-    $screen = get_current_screen();
-    if ($screen->post_type === 'shift') {
+    global $typenow;
+    if ($typenow === 'shift') {
         wp_enqueue_script(
             'sbm-admin-shift-validation',
             plugin_dir_url(__FILE__) . '../assets/js/admin-shift-validation.js',
             [],
-            '1.0',
+            time(),
             true
         );
     }
