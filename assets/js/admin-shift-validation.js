@@ -16,6 +16,33 @@ document.addEventListener('DOMContentLoaded', function () {
   const startTimeSelect = document.querySelector('[name="start_time"]');
   const endTimeSelect = document.querySelector('[name="end_time"]');
 
+  // 🔄 Adjust date picker based on time
+  if (shiftDateInput) {
+    const currentHour = now.getHours();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    let minDate;
+
+    if (currentHour >= 22) {
+      // If 10:00 PM or later, disable today
+      const yyyy = tomorrow.getFullYear();
+      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const dd = String(tomorrow.getDate()).padStart(2, '0');
+      minDate = `${yyyy}-${mm}-${dd}`;
+      console.log('📆 Updated min date to tomorrow (>= 10PM):', minDate);
+    } else {
+      // Allow today
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      minDate = `${yyyy}-${mm}-${dd}`;
+      console.log('📆 Min date is today (< 10PM):', minDate);
+    }
+
+    shiftDateInput.min = minDate;
+  }
+
   const messagesContainer = document.createElement('div');
   messagesContainer.id = 'sbm-warnings';
   messagesContainer.style.cssText = `

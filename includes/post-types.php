@@ -31,7 +31,7 @@ function sbm_register_post_types() {
         'label'                 => __('Shifts', 'shift-booking-manager'),
         'description'           => __('Service provider shift availability', 'shift-booking-manager'),
         'labels'                => $labels,
-        'supports'              => ['title', 'editor', 'custom-fields'], // Additional fields managed via post_meta
+        'supports'              => [], // Additional fields managed via post_meta
         'hierarchical'          => false,
         'public'                => true,
         'show_ui'               => true, // Admin only, hidden if using front-end only
