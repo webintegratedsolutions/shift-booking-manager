@@ -61,7 +61,11 @@ function sbm_render_shift_meta_box($post) {
     ?>
 <?php $min_date = date('Y-m-d'); ?>
 <p><label>Date:</label><br>
-    <input type="date" id="shift_date" name="shift_date" min="<?php echo date('Y-m-d'); ?>" value="<?php echo esc_attr($date); ?>">
+<?php
+$today = (new DateTime('now', new DateTimeZone('America/Toronto')))->format('Y-m-d');
+?>
+<?php error_log("Shift date min: $today"); ?>
+<input type="date" id="shift_date" name="shift_date" min="<?php echo $today; ?>" value="<?php echo esc_attr($date); ?>">
 </p>
 
 <p><label>Start Time:</label><br>
