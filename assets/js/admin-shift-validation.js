@@ -15,11 +15,25 @@ document.addEventListener('DOMContentLoaded', function () {
   const shiftDateInput = document.querySelector('[name="shift_date"]');
   const startTimeSelect = document.querySelector('[name="start_time"]');
   const endTimeSelect = document.querySelector('[name="end_time"]');
+
   const messagesContainer = document.createElement('div');
   messagesContainer.id = 'sbm-warnings';
-  messagesContainer.style.color = '#b32d2e';
-  messagesContainer.style.marginTop = '10px';
-  form.querySelector('#submitdiv')?.prepend(messagesContainer);
+  messagesContainer.style.cssText = `
+    display: none;
+    margin: 15px 0;
+    padding: 12px 16px;
+    border-left: 4px solid #007cba;
+    background: #f0f8ff;
+    color: #000;
+    font-size: 14px;
+    line-height: 1.5;
+  `;
+  
+  // Insert below the admin page title
+  const adminTitle = document.querySelector('.wrap h1');
+  if (adminTitle && adminTitle.parentNode) {
+    adminTitle.parentNode.insertBefore(messagesContainer, adminTitle.nextSibling);
+  }  
 
   const fullTimeOptions = Array.from(startTimeSelect.options).map(option => ({
     value: option.value,
@@ -31,13 +45,17 @@ document.addEventListener('DOMContentLoaded', function () {
   endTimeSelect.disabled = true;
 
   function showWarning(msg) {
+    clearWarnings(); // Make sure only one message is shown at a time
     const div = document.createElement('div');
     div.textContent = msg;
+    div.style.marginBottom = '5px';
     messagesContainer.appendChild(div);
-  }
+    messagesContainer.style.display = 'block';
+  }  
 
   function clearWarnings() {
     messagesContainer.innerHTML = '';
+    messagesContainer.style.display = 'none';
   }
 
   function filterStartTimes(selectedDate) {
@@ -188,6 +206,7 @@ if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
     endTimeSelect.disabled = !start;
     endTimeSelect.value = '';
   });
+  
 
   form.addEventListener('submit', function (e) {
     let isValid = true;

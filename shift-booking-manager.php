@@ -93,7 +93,6 @@ function sbm_enqueue_assets() {
 add_action('wp_enqueue_scripts', 'sbm_enqueue_assets');
 
 // Plugin Uninstall - defined in uninstall.php if needed
-
 function sbm_cleanup_empty_shift_drafts() {
     $shifts = get_posts([
         'post_type' => 'shift',
@@ -117,6 +116,17 @@ function sbm_cleanup_empty_shift_drafts() {
     }
 }
 add_action('wp_loaded', 'sbm_cleanup_empty_shift_drafts');
+
+// Add custom admin styles for the shift post type
+function sbm_custom_admin_styles($hook) {
+    if ($hook === 'post-new.php' || $hook === 'post.php') {
+        global $post;
+        if ($post && $post->post_type === 'shift') {
+            wp_enqueue_style('sbm-admin-css', plugin_dir_url(__FILE__) . 'assets/css/admin-style.css');
+        }
+    }
+}
+add_action('admin_enqueue_scripts', 'sbm_custom_admin_styles');
 
 /**
  * TEMP: Add a test shift for development purposes
