@@ -188,13 +188,21 @@ function sbm_save_shift_meta_box($post_id) {
             wp_die($message, __('Invalid End Time', 'shift-booking-manager'), ['back_link' => false]);
         }
     
-        // NEW: Minimum 1 hour shift
-        if (($end_timestamp - $start_timestamp) < HOUR_IN_SECONDS) {
-            update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
-            $message = __('The shift must be at least 1 hour long.', 'shift-booking-manager');
-            $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
-            wp_die($message, __('Shift Too Short', 'shift-booking-manager'), ['back_link' => false]);
-        }
+// Allow shifts to end at midnight (23:59) if they are at least 45 minutes long
+$ends_at_midnight = (date('H:i', $end_timestamp) === '23:59');
+$min_duration = $ends_at_midnight ? 45 * MINUTE_IN_SECONDS : HOUR_IN_SECONDS;
+
+if (($end_timestamp - $start_timestamp) < $min_duration) {
+    update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
+
+    $message = $ends_at_midnight
+        ? __('The shift must be at least 45 minutes long if it ends at Midnight.', 'shift-booking-manager')
+        : __('The shift must be at least 1 hour long.', 'shift-booking-manager');
+
+    $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
+    wp_die($message, __('Shift Too Short', 'shift-booking-manager'), ['back_link' => false]);
+}
+
     }
 
     // Can't be "booked" without both client and provider
@@ -247,22 +255,27 @@ function sbm_save_shift_meta_box($post_id) {
         update_post_meta($post_id, $key, $value);
     }
 
-    // === AUTO-GENERATE TITLE ===
-    if (!empty($shift_date) && !empty($start_time) && !empty($end_time)) {
-        $formatted_date = date('F jS', strtotime($shift_date));
-        $formatted_start = date('g:i A', strtotime($start_time));
-        $formatted_end = date('g:i A', strtotime($end_time));
-        $auto_title = "{$formatted_date} @ {$formatted_start} to {$formatted_end}";
+// === AUTO-GENERATE TITLE ===
+// Only update the title if the post is being published or updated, not when it's being created as a draft
+if (!empty($shift_date) && !empty($start_time) && !empty($end_time)) {
+    $formatted_date = date('F jS', strtotime($shift_date));
+    $formatted_start = date('g:i A', strtotime($start_time));
 
-        remove_action('save_post_shift', 'sbm_save_shift_meta_box');
-        if (get_post_status($post_id) === 'publish') {
-            wp_update_post([
-                'ID' => $post_id,
-                'post_title' => $auto_title,
-            ]);
-        }
-        add_action('save_post_shift', 'sbm_save_shift_meta_box');
+    // Replace 11:59 PM with "Midnight"
+    $end_raw = date('H:i', strtotime($end_time));
+    $formatted_end = ($end_raw === '23:59') ? 'Midnight' : date('g:i A', strtotime($end_time));
+
+    $auto_title = "{$formatted_date} @ {$formatted_start} to {$formatted_end}";
+
+    remove_action('save_post_shift', 'sbm_save_shift_meta_box');
+    if (get_post_status($post_id) === 'publish') {
+        wp_update_post([
+            'ID' => $post_id,
+            'post_title' => $auto_title,
+        ]);
     }
+    add_action('save_post_shift', 'sbm_save_shift_meta_box');
+}
 
     delete_post_meta($post_id, '_sbm_shift_validation_failed');
 }

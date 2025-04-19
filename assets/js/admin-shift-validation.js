@@ -85,26 +85,34 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('✅ Added clean placeholder');
   
     fullTimeOptions.forEach(({ value, label }) => {
-      // Skip adding empty options (already handled with the placeholder)
       if (!value) return;
-  
-      const hour = parseInt(value.split(':')[0], 10);
-      const minutes = parseInt(value.split(':')[1], 10);
-  
+    
+      const [optHour, optMin] = value.split(':').map(Number);
+      const optionMinutes = optHour * 60 + optMin;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    
+      // Skip late start times (11:15 PM, 11:30 PM, 11:45 PM)
+      if (
+        (optHour === 23 && (optMin === 15 || optMin === 30 || optMin === 45))
+      ) {
+        console.log(`⛔ Skipped [${value}] (restricted late start option)`);
+        return;
+      }
+    
       if (isSameLocalDate) {
-        if (hour >= currentHour + 1) {
+        if (optionMinutes >= nowMinutes + 60) {
           const opt = new Option(label, value);
           startTimeSelect.appendChild(opt);
-          console.log(`✅ Added [${value}] (today, hour >= ${currentHour + 1})`);
+          console.log(`✅ Added [${value}] (≥ 60 min from now)`);
         } else {
-          console.log(`⛔ Skipped [${value}] (today, hour < ${currentHour + 1})`);
+          console.log(`⛔ Skipped [${value}] (< 60 min from now)`);
         }
       } else {
         const opt = new Option(label, value);
         startTimeSelect.appendChild(opt);
         console.log(`✅ Added [${value}] (future date)`);
       }
-    });
+    });      
   
     console.log('🧾 Final start options count:', startTimeSelect.options.length);
     console.log('====================');
@@ -113,13 +121,15 @@ document.addEventListener('DOMContentLoaded', function () {
   function filterEndTimes(startVal) {
     endTimeSelect.innerHTML = '';
     endTimeSelect.appendChild(new Option('-- Select End Time --', ''));
-
+  
     if (!startVal) return;
-
+  
     const startParts = startVal.split(':');
     const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-
+  
     fullTimeOptions.forEach(({ value, label }) => {
+      if (!value) return;
+  
       const parts = value.split(':');
       const total = parseInt(parts[0]) * 60 + parseInt(parts[1]);
       if (total >= startMinutes + 60) {
@@ -127,7 +137,12 @@ document.addEventListener('DOMContentLoaded', function () {
         endTimeSelect.appendChild(opt);
       }
     });
-  }
+  
+    // Always add final "Midnight" option
+    const midnightOption = new Option('Midnight', '23:59');
+    endTimeSelect.appendChild(midnightOption);
+    console.log('✅ Added end option: Midnight (23:59)');
+  }  
 
   shiftDateInput.addEventListener('change', function () {
     // Do not clear immediately, allow previous warning to remain
@@ -189,14 +204,25 @@ if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
   const interval = getTimeDiffMinutes(oldStart, oldEnd);
   const newEndTime = getTimePlusMinutes(adjustedStart, interval);
 
+  // Check if new end time is valid
   if (interval && !isTimeValid(newEndTime, endTimeSelect)) {
-    adjustedEnd = '';
-    endTimeSelect.value = '';
-    showWarning(`End time reset. Please select a new one at least 1 hour after the start.`);
+    // Try shorter interval only if Midnight is allowed
+    const midnightValue = '23:59';
+    const new45MinEnd = getTimePlusMinutes(adjustedStart, 45);
+  
+    if (isTimeValid(midnightValue, endTimeSelect) && new45MinEnd === midnightValue) {
+      adjustedEnd = midnightValue;
+      endTimeSelect.value = midnightValue;
+      showWarning(`End time adjusted to Midnight (23:59) for a 45-minute shift.`);
+    } else {
+      adjustedEnd = '';
+      endTimeSelect.value = '';
+      showWarning(`End time reset. Please select a new one at least 1 hour after the start.`);
+    }
   } else {
     adjustedEnd = newEndTime;
     endTimeSelect.value = adjustedEnd;
-  }
+  }  
 
   endTimeSelect.disabled = !adjustedStart;
 }
@@ -218,7 +244,7 @@ if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
     let isValid = true;
     clearWarnings();
     form.querySelectorAll('.sbm-error').forEach(el => el.remove());
-
+  
     const requiredFields = ['shift_date', 'start_time', 'end_time', 'service', 'hourly_rate'];
     requiredFields.forEach(field => {
       const input = form.querySelector(`[name="${field}"]`);
@@ -231,12 +257,33 @@ if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
         input.parentNode.appendChild(error);
       }
     });
-
+  
+    // ⏱️ Custom shift duration check
+    const start = form.querySelector('[name="start_time"]').value;
+    const end = form.querySelector('[name="end_time"]').value;
+  
+    if (start && end) {
+      const minutes = getTimeDiffMinutes(start, end);
+      const isMidnight = end === '23:59';
+      const isValidDuration = isMidnight ? minutes >= 45 : minutes >= 60;
+  
+      if (!isValidDuration) {
+        isValid = false;
+        const error = document.createElement('div');
+        error.className = 'sbm-error';
+        error.style.color = 'red';
+        error.textContent = isMidnight
+          ? 'The shift must be at least 45 minutes long if ending at Midnight.'
+          : 'The shift must be at least 1 hour long.';
+        endTimeSelect.parentNode.appendChild(error);
+      }
+    }
+  
     if (!isValid) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  });
+  });  
 
   function getTimeDiffMinutes(start, end) {
     if (!start || !end) return null;
