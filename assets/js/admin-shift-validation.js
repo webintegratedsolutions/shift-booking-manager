@@ -130,9 +130,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   shiftDateInput.addEventListener('change', function () {
-    clearWarnings();
+    // Do not clear immediately, allow previous warning to remain
     const selectedDate = this.value;
     if (!selectedDate) return;
+  
+    // Once the user makes a change to shift date, clear warnings
+    setTimeout(() => clearWarnings(), 3000); // small delay to allow any pending messages  
 
     startTimeSelect.disabled = false;
 
@@ -207,6 +210,9 @@ if (isSameLocalDate && !isTimeValid(adjustedStart, startTimeSelect)) {
     endTimeSelect.value = '';
   });
   
+  endTimeSelect.addEventListener('change', function () {
+    clearWarnings(); // Hide previous warning when end time is changed
+  });
 
   form.addEventListener('submit', function (e) {
     let isValid = true;
