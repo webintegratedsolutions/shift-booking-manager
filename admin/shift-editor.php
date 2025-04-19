@@ -282,16 +282,15 @@ if (!empty($shift_date) && !empty($start_time) && !empty($end_time)) {
 add_action('save_post_shift', 'sbm_save_shift_meta_box');
 
 function sbm_exclude_auto_drafts_from_admin($query) {
-    global $pagenow;
+    if (!is_admin() || !$query->is_main_query()) return;
 
-    if (
-        is_admin() &&
-        $pagenow === 'edit.php' &&
-        isset($_GET['post_type']) &&
-        $_GET['post_type'] === 'shift' &&
-        $query->is_main_query()
+    // Only apply to 'shift' post type in main "All" admin screen
+    global $pagenow;
+    if ($pagenow === 'edit.php' &&
+        $query->get('post_type') === 'shift' &&
+        $query->get('post_status') === ''  // This ensures we don't override 'trash', 'draft', etc.
     ) {
-        $query->set('post_status', array('publish', 'draft', 'pending', 'future', 'private'));
+        $query->set('post_status', ['publish', 'draft', 'pending', 'future']);
     }
 }
 add_action('pre_get_posts', 'sbm_exclude_auto_drafts_from_admin');
