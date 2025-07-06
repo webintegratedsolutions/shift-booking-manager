@@ -79,8 +79,8 @@ for ($day = 1; $day <= $days_in_month; $day++) {
             $status = $shift['status'];
             $class = $status === 'booked' ? 'booked' : 'open';
             $start_time = date('g:i A', strtotime($shift['start_time']));
-            $end_raw = date('H:i', strtotime(get_post_meta($shift['id'], 'end_time', true)));
-            $end_time = ($end_raw === '23:59') ? 'Midnight' : date('g:i A', strtotime($end_raw));
+            $end_raw = get_post_meta($shift['id'], 'end_time', true);
+            $end_time = (date('H:i', strtotime($end_raw)) === '23:59') ? 'Midnight' : date('g:i A', strtotime($end_raw));
             $time_label = "{$start_time} – {$end_time}";
             $label = $status === 'booked' ? 'Booked' : 'Book';
             $link = $status === 'open' ? "/book-a-shift/?shift_id={$shift['id']}" : '#';

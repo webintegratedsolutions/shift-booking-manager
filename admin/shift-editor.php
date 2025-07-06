@@ -10,7 +10,7 @@ defined('ABSPATH') || exit;
 /**
  * Render time options in 15-minute increments
  */
-function sbm_render_time_options($selected = '') {
+function sbm_render_time_dropdown_options($selected = '') {
     error_log('--- Rendering Shift Metabox ---');
     error_log('Rendering time selects...');
 
@@ -25,7 +25,7 @@ function sbm_render_time_options($selected = '') {
         $output .= "<option value='{$value}' {$is_selected}>{$label}</option>";
     }
 
-    error_log('--- sbm_render_time_options finished ---');
+    error_log('--- sbm_render_time_dropdown_options finished ---');
     return $output;
 }
 
@@ -53,52 +53,55 @@ function sbm_render_shift_meta_box($post) {
     $end = get_post_meta($post->ID, 'end_time', true);
     $service = get_post_meta($post->ID, 'service', true);
     $client_id = get_post_meta($post->ID, 'client_id', true);
-    $status = get_post_meta($post->ID, 'status', true);
+    $shift_status = get_post_meta($post->ID, 'shift_status', true) ?: 'open';
+    $is_locked = in_array($shift_status, ['booked', 'completed']);
+    $disabled_attr = $is_locked ? 'disabled' : '';
     $rate = get_post_meta($post->ID, 'hourly_rate', true);
     $provider_id = get_post_meta($post->ID, 'provider_id', true);
 
     wp_nonce_field('sbm_save_shift_meta', 'sbm_shift_nonce');
     ?>
-<?php $min_date = date('Y-m-d'); ?>
+
 <p><label>Date:</label><br>
 <?php
+// Display any validation errors
 $today = (new DateTime('now', new DateTimeZone('America/Toronto')))->format('Y-m-d');
+error_log("Shift date min: $today");
 ?>
-<?php error_log("Shift date min: $today"); ?>
-<input type="date" id="shift_date" name="shift_date" min="<?php echo $today; ?>" value="<?php echo esc_attr($date); ?>">
-</p>
+<input type="date" id="shift_date" name="shift_date" min="<?php echo $today; ?>" value="<?php echo esc_attr($date); ?>" <?php echo $disabled_attr; ?>>
 
 <p><label>Start Time:</label><br>
-    <select name="start_time">
+    <select name="start_time" <?php echo $disabled_attr; ?>>
         <option value="">-- Select Start Time --</option>
-        <?php echo sbm_render_time_options($start); ?>
+        <?php echo sbm_render_time_dropdown_options($start); ?>
     </select>
 </p>
-    <p><label>End Time:</label><br>
-    <select name="end_time">
+<p><label>End Time:</label><br>
+    <select name="end_time" <?php echo $disabled_attr; ?>>
         <option value="">-- Select End Time --</option>
-        <?php echo sbm_render_time_options($end); ?>
+        <?php echo sbm_render_time_dropdown_options($end); ?>
     </select>
-    </p>
+</p>
     <p><label>Service:</label><br>
-        <input type="text" name="service" value="<?php echo esc_attr($service); ?>">
+    <input type="text" name="service" value="<?php echo esc_attr($service); ?>" <?php echo $disabled_attr; ?>>
     </p>
     <p><label>Hourly Rate:</label><br>
-        <input type="number" name="hourly_rate" value="<?php echo esc_attr($rate); ?>" step="0.01">
+    <input type="number" name="hourly_rate" value="<?php echo esc_attr($rate); ?>" step="0.01" <?php echo $disabled_attr; ?>>
     </p>
     <p><label>Status:</label><br>
-        <select name="status">
-            <option value="open" <?php selected($status, 'open'); ?>>Open</option>
-            <option value="booked" <?php selected($status, 'booked'); ?>>Booked</option>
-            <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
-            <option value="cancelled" <?php selected($status, 'cancelled'); ?>>Cancelled</option>
+        <select name="shift_status">
+            <option value="open" <?php selected($shift_status, 'open'); ?>>Open</option>
+            <option value="booked" <?php selected($shift_status, 'booked'); ?>>Booked</option>
+            <option value="completed" <?php selected($shift_status, 'completed'); ?>>Completed</option>
+            <option value="cancelled" <?php selected($shift_status, 'cancelled'); ?>>Cancelled</option>
         </select>
     </p>
     <p><label>Provider:</label><br>
-        <select name="provider_id">
+    <select name="provider_id" <?php echo $disabled_attr; ?>>
             <option value="">Select a provider</option>
             <?php
-            $providers = get_users(['role' => 'editor']);
+            $provider_role = 'editor';
+            $providers = get_users(['role' => $provider_role]);
             foreach ($providers as $provider) {
                 $selected = selected($provider_id, $provider->ID, false);
                 echo "<option value='{$provider->ID}' {$selected}>{$provider->display_name} ({$provider->user_email})</option>";
@@ -107,10 +110,11 @@ $today = (new DateTime('now', new DateTimeZone('America/Toronto')))->format('Y-m
         </select>
     </p>
     <p><label>Client:</label><br>
-        <select name="client_id">
+    <select name="client_id" <?php echo $disabled_attr; ?>>
             <option value="">Select a client</option>
             <?php
-            $clients = get_users(['role' => 'contributor']);
+            $client_role = 'contributor';
+            $clients = get_users(['role' => $client_role]);
             foreach ($clients as $client) {
                 $selected = selected($client_id, $client->ID, false);
                 echo "<option value='{$client->ID}' {$selected}>{$client->display_name} ({$client->user_email})</option>";
@@ -125,8 +129,14 @@ $today = (new DateTime('now', new DateTimeZone('America/Toronto')))->format('Y-m
  * Remove title input field for shift post type
  */
 function sbm_hide_shift_title_field() {
+    global $pagenow;
+
+    if (!in_array($pagenow, ['post-new.php', 'post.php'])) {
+        return;
+    }
+
     $screen = get_current_screen();
-    if ($screen->post_type === 'shift') {
+    if ($screen && $screen->post_type === 'shift') {
         echo '<style>#titlediv { display: none; }</style>';
     }
 }
@@ -150,12 +160,12 @@ function sbm_save_shift_meta_box($post_id) {
     $end_time = sanitize_text_field($_POST['end_time'] ?? '');
     $service = sanitize_text_field($_POST['service'] ?? '');
     $rate = floatval($_POST['hourly_rate'] ?? 0);
-    $status = sanitize_text_field($_POST['status'] ?? 'open');
+    $shift_status = sanitize_text_field($_POST['shift_status'] ?? 'open');
     $provider_id = intval($_POST['provider_id'] ?? 0);
     $client_id = intval($_POST['client_id'] ?? 0);
 
     $is_existing_shift = get_post_status($post_id) !== false;
-    $original_status = get_post_meta($post_id, 'status', true);
+    $original_status = get_post_meta($post_id, 'shift_status', true);
 
     // === VALIDATION RULES ===
 
@@ -206,7 +216,7 @@ if (($end_timestamp - $start_timestamp) < $min_duration) {
     }
 
     // Can't be "booked" without both client and provider
-    if ($status === 'booked' && (empty($client_id) || empty($provider_id))) {
+    if ($shift_status === 'booked' && (empty($client_id) || empty($provider_id)))  {
         update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
         $message = __('You must select both a client and provider to mark this shift as booked.', 'shift-booking-manager');
         $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
@@ -214,7 +224,7 @@ if (($end_timestamp - $start_timestamp) < $min_duration) {
     }
 
     // Can't set back to open if both provider and client are set
-    if ($status === 'open' && !empty($client_id) && !empty($provider_id)) {
+    if ($shift_status === 'open' && !empty($client_id) && !empty($provider_id)) {
         update_post_meta($post_id, '_sbm_shift_validation_failed', '1');
         $message = __('A shift cannot remain open if both a client and provider are already selected.', 'shift-booking-manager');
         $message .= '<br><br><a href="' . esc_url($edit_link) . '">&laquo; Go back to edit shift</a>';
@@ -223,7 +233,7 @@ if (($end_timestamp - $start_timestamp) < $min_duration) {
 
     // Prevent edits to booked/completed unless cancelling
     $locked_statuses = ['booked', 'completed'];
-    if ($is_existing_shift && in_array($original_status, $locked_statuses) && $status !== 'cancelled') {
+    if ($is_existing_shift && in_array($original_status, ['booked', 'completed']) && $shift_status !== 'cancelled') {
         $locked_fields = ['shift_date', 'start_time', 'end_time', 'service', 'hourly_rate', 'provider_id', 'client_id'];
         foreach ($locked_fields as $field) {
             if (!empty($_POST[$field])) {
@@ -246,14 +256,14 @@ if (($end_timestamp - $start_timestamp) < $min_duration) {
         'end_time' => $end_time,
         'service' => $service,
         'hourly_rate' => $rate,
-        'status' => $status,
+        'shift_status' => $shift_status,
         'provider_id' => $provider_id,
         'client_id' => $client_id,
     ];
 
-    foreach ($fields as $key => $value) {
-        update_post_meta($post_id, $key, $value);
-    }
+foreach ($fields as $key => $value) {
+    update_post_meta($post_id, $key, $value);
+}
 
 // === AUTO-GENERATE TITLE ===
 // Only update the title if the post is being published or updated, not when it's being created as a draft
@@ -261,9 +271,10 @@ if (!empty($shift_date) && !empty($start_time) && !empty($end_time)) {
     $formatted_date = date('F jS', strtotime($shift_date));
     $formatted_start = date('g:i A', strtotime($start_time));
 
-    // Replace 11:59 PM with "Midnight"
-    $end_raw = date('H:i', strtotime($end_time));
-    $formatted_end = ($end_raw === '23:59') ? 'Midnight' : date('g:i A', strtotime($end_time));
+    $end_timestamp = strtotime($end_time);
+    $formatted_end = (date('H:i', $end_timestamp) === '23:59')
+        ? 'Midnight'
+        : date('g:i A', $end_timestamp);
 
     $auto_title = "{$formatted_date} @ {$formatted_start} to {$formatted_end}";
 

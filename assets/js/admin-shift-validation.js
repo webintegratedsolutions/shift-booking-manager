@@ -67,9 +67,13 @@ document.addEventListener('DOMContentLoaded', function () {
     label: option.label
   }));
 
-  // Initially disable time fields
-  startTimeSelect.disabled = true;
-  endTimeSelect.disabled = true;
+  // 🔍 Determine initial shift status
+  const statusSelect = document.querySelector('[name="shift_status"]');
+  const initialStatus = statusSelect?.value;
+
+  const isLocked = initialStatus === 'booked' || initialStatus === 'completed';
+  startTimeSelect.disabled = isLocked;
+  endTimeSelect.disabled = isLocked;
 
   function showWarning(msg) {
     clearWarnings(); // Make sure only one message is shown at a time
